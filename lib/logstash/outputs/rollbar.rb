@@ -28,7 +28,7 @@ class LogStash::Outputs::Rollbar < LogStash::Outputs::Base
   # The default format for the Rollbar "message" or item title. In most cases you'll want to override
   # this and build up a message with specific fields from the event. You can override this for a specific
   # event by adding a "[rollbar][format]" field to that event.
-  config :format, :validate => :string, :default => "%{message}"
+  config :format, :validate => :string, :default => "%{error}"
 
   # Rollbar API URL endpoint. You shouldn't need to change this.
   config :endpoint, :validate => :string, :default => 'https://api.rollbar.com/api/1/item/'
@@ -63,26 +63,33 @@ class LogStash::Outputs::Rollbar < LogStash::Outputs::Base
     #
     # If logstash has created 'rollbar' fields, we'll use those to populate the item...
     #
-    if data['rollbar']
-
-      merge_keys = %w{access_token client context environment fingerprint format framework
-                      language level person platform request server title uuid }
-      merge_keys.each do |key|
-        data['rollbar'][key] && rb_item['data'][key] = data['rollbar'][key]
-      end
-      data.delete('rollbar')
-    end
+    #if data['rollbar']
+    #  merge_keys = %w{access_token client context environment fingerprint format framework
+    #                  language level person platform request server title uuid }
+    #  merge_keys.each do |key|
+    #    data['rollbar'][key] && rb_item['data'][key] = data['rollbar'][key]
+    #  end
+    #  data.delete('rollbar')
+    #end
 
     # ...then put whatever's left in 'custom'...
     rb_item['data']['custom'] = data
 
-    # ...and finally override the fields that have a specific meaning
+    # Some optimizations for k8s and Go Projects in AVS
     rb_item['data']['timestamp'] = event.timestamp.to_i
-    rb_item['data']['level'] = @level unless rb_item['data'].has_key?('level')
-    rb_item['data']['environment'] = @environment unless rb_item['data'].has_key?('environment')
+    rb_item['data']['level'] = data.has_key?('level') ? data['level'] : @level 
+    rb_item['data']['environment'] = data['kubernetes'].has_key?('namespace') ? data['kubernetes']['namespace'] : @environment
+    rb_item['data']['title'] = data['message']
+    rb_item['data']['code_version'] = data['git_commit'] if data['git_commit']
+
+    #Server data
+    if data['kubernetes'] && data['kubernetes']['node']
+      rb_item['data']['server']['host'] = data['kubernetes']['node']['name'] if data['kubernetes']['node']['name']
+    end
 
     rb_item['data']['notifier']['name'] = 'logstash'
-    rb_item['data']['notifier']['version'] = Gem.loaded_specs["logstash-output-rollbar"].version
+    rb_item['data']['notifier']['version'] = Gem.loaded_specs["logstash-output-rollbar-k8s"].version
+
 
     # Construct the message body using either:
     #

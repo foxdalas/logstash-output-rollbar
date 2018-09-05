@@ -1,4 +1,3 @@
 source 'https://rubygems.org'
 gemspec
-gem "java"
-gem "logstash"
+gem "logstash", :github => "elasticsearch/logstash", :branch => "6.4"

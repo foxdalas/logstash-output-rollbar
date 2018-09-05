@@ -1,13 +1,13 @@
 Gem::Specification.new do |s|
 
-  s.name            = 'logstash-output-rollbar-6'
-  s.version         = '0.3.0'
+  s.name            = 'logstash-output-rollbar-k8s'
+  s.version         = '0.0.1'
   s.licenses        = ['Apache-2.0']
   s.summary         = "The Rollbar Logstash output sends events to the Rollbar error monitoring service."
   s.description     = "This gem is a logstash plugin. Install using: $LS_HOME/bin/plugin install gemname. This gem is not a stand-alone program"
   s.authors         = ["Maxim Pogozhiy"]
   s.email           = 'foxdalas@gmail.com'
-  s.homepage        = "https://github.com/rollbar/logstash-output-rollbar"
+  s.homepage        = "https://github.com/foxdalas/logstash-output-rollbar"
   s.require_paths = ["lib"]
 
   # Files
